@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: consumer-search-app
-    env: python
-    buildCommand: ""
-    startCommand: gunicorn main:app
-    envVars:
-      - key: PORT
-        value: 3000
