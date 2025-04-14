@@ -14,7 +14,7 @@ def get_consumer_data(search_type, value):
 
     try:
         # Map search type to actual DB column
-        column = "consumer_number" if search_type == "consumer_number" else "meter_number"
+        column = "consumer_number" if search_type == "consumer_number" else "New Meter Qr Code"
         
         # Debugging info
         print(f"🔍 Searching by: {column} = {value}")
