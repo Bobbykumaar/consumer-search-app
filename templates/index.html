@@ -101,7 +101,8 @@
                 </ul>
 
                 <form method="post" action="/download">
-                    <input type="hidden" name="csv_data" value="{{ result | tojson }}">
+                    <input type="hidden" name="csv_data" value='{{ result | tojson | safe }}'>
+
                     <button type="submit">⬇️ Download as CSV</button>
                 </form>
             </div>
