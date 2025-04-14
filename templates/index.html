@@ -5,125 +5,22 @@
     <title>Consumer Search</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        :root {
-            --primary: #007bff;
-            --background: #f0f2f5;
-            --card-bg: #fff;
-            --text-color: #333;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--background);
-            margin: 0;
-            padding: 20px;
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-        }
-
-        .container {
-            max-width: 600px;
-            width: 100%;
-        }
-
-        h2 {
-            color: var(--primary);
-            margin-bottom: 10px;
-        }
-
-        form {
-            margin-top: 20px;
-        }
-
-        select, input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            margin-top: 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            margin-top: 10px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .card {
-            background: var(--card-bg);
-            margin-top: 30px;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .card h3 {
-            margin-top: 0;
-            color: #222;
-        }
-
-        ul {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        li {
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        li:last-child {
-            border-bottom: none;
-        }
-
-        .message {
-            margin-top: 20px;
-            color: red;
-            font-weight: bold;
-        }
-
-        @media screen and (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-
-            input[type="text"], select, button {
-                font-size: 14px;
-                padding: 10px;
-            }
-
-            .card {
-                padding: 15px;
-            }
-        }
+        /* ... your existing styles ... */
     </style>
 </head>
 <body>
     <div class="container">
         <h2>🔍 Search Consumer</h2>
-        <p>Welcome! 👋 Use the form below to search by Consumer Number or Meter Number.</p>
+        <p>Search by Consumer Number or Meter Number (QR Code).</p>
 
         <form method="post">
-            <label for="search_type">Search by:</label>
-            <select name="search_type" id="search_type" onchange="updatePlaceholder()">
-                <option value="consumer_number">Consumer Number</option>
-                <option value="meter_number">Meter Number</option>
-            </select>
-
-            <input type="text" name="search_value" id="search_value" placeholder="Enter Consumer Number" required>
+            <label>
+                <input type="radio" name="search_type" value="consumer" {% if selected == 'consumer' %}checked{% endif %}> Consumer Number
+            </label>
+            <label>
+                <input type="radio" name="search_type" value="meter" {% if selected == 'meter' %}checked{% endif %}> Meter Number
+            </label>
+            <input type="text" name="input_value" placeholder="Enter number..." required>
             <button type="submit">Search</button>
         </form>
 
@@ -135,22 +32,12 @@
             <div class="card">
                 <h3>Consumer Details</h3>
                 <ul>
-                {% for key, value in result.items() %}
-                    <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
-                {% endfor %}
+                    {% for key, value in result.items() %}
+                        <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
+                    {% endfor %}
                 </ul>
             </div>
         {% endif %}
     </div>
-
-    <script>
-        function updatePlaceholder() {
-            const select = document.getElementById('search_type');
-            const input = document.getElementById('search_value');
-            input.placeholder = select.value === 'meter_number' 
-                ? "Enter Meter Number" 
-                : "Enter Consumer Number";
-        }
-    </script>
 </body>
 </html>
