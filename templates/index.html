@@ -36,7 +36,7 @@
             margin-top: 20px;
         }
 
-        input[type="text"] {
+        select, input[type="text"] {
             width: 100%;
             padding: 12px;
             margin-top: 8px;
@@ -100,7 +100,7 @@
                 padding: 10px;
             }
 
-            input[type="text"], button {
+            input[type="text"], select, button {
                 font-size: 14px;
                 padding: 10px;
             }
@@ -114,10 +114,16 @@
 <body>
     <div class="container">
         <h2>🔍 Search Consumer</h2>
-        <p>Welcome! 👋 Use the form below to search for consumer details by entering their Consumer Number. Make sure to enter it exactly as it appears.</p>
+        <p>Welcome! 👋 Use the form below to search by Consumer Number or Meter Number.</p>
 
         <form method="post">
-            <input type="text" name="consumer_number" placeholder="Enter Consumer Number" required>
+            <label for="search_type">Search by:</label>
+            <select name="search_type" id="search_type" onchange="updatePlaceholder()">
+                <option value="consumer_number">Consumer Number</option>
+                <option value="meter_number">Meter Number</option>
+            </select>
+
+            <input type="text" name="search_value" id="search_value" placeholder="Enter Consumer Number" required>
             <button type="submit">Search</button>
         </form>
 
@@ -136,5 +142,15 @@
             </div>
         {% endif %}
     </div>
+
+    <script>
+        function updatePlaceholder() {
+            const select = document.getElementById('search_type');
+            const input = document.getElementById('search_value');
+            input.placeholder = select.value === 'meter_number' 
+                ? "Enter Meter Number" 
+                : "Enter Consumer Number";
+        }
+    </script>
 </body>
 </html>

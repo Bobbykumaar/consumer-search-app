@@ -8,23 +8,23 @@ def pretty_key(key):
     """Convert snake_case or underscored column names into a nicer display format."""
     return key.replace('_', ' ').title().replace("Summary", "").replace("Styra", "").strip()
 
-def get_consumer_data(consumer_number):
+def get_consumer_data(search_type, value):
     conn = sqlite3.connect("consumers.db")
     cursor = conn.cursor()
 
-    # Debug: Print columns in table
-    cursor.execute("PRAGMA table_info(consumers)")
-    columns = [col[1] for col in cursor.fetchall()]
-    print("🧾 Columns in table:", columns)
-
     try:
-        # Try original input
-        cursor.execute("SELECT * FROM consumers WHERE consumer_number = ?", (consumer_number,))
+        # Map search type to actual DB column
+        column = "consumer_number" if search_type == "consumer_number" else "meter_number"
+        
+        # Debugging info
+        print(f"🔍 Searching by: {column} = {value}")
+
+        cursor.execute(f"SELECT * FROM consumers WHERE {column} = ?", (value,))
         row = cursor.fetchone()
 
-        # If not found, try without leading zeros
-        if not row and consumer_number.lstrip("0") != consumer_number:
-            cleaned = consumer_number.lstrip("0")
+        # Also try stripped version if consumer_number has leading zeros
+        if not row and search_type == "consumer_number" and value.lstrip("0") != value:
+            cleaned = value.lstrip("0")
             cursor.execute("SELECT * FROM consumers WHERE consumer_number = ?", (cleaned,))
             row = cursor.fetchone()
 
@@ -43,14 +43,18 @@ def get_consumer_data(consumer_number):
 def index():
     result = None
     message = None
+
     if request.method == "POST":
-        consumer_number = request.form.get("consumer_number", "").strip()
-        if consumer_number:
-            result = get_consumer_data(consumer_number)
+        search_type = request.form.get("search_type", "consumer_number")
+        search_value = request.form.get("search_value", "").strip()
+
+        if search_value:
+            result = get_consumer_data(search_type, search_value)
             if not result:
-                message = f"No data found for consumer number: {consumer_number}"
+                message = f"No data found for {search_type.replace('_', ' ')}: {search_value}"
         else:
-            message = "Please enter a consumer number."
+            message = "Please enter a valid input."
+
     return render_template("index.html", result=result, message=message)
 
 if __name__ == '__main__':
