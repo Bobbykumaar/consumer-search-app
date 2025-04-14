@@ -12,7 +12,7 @@ def get_consumer_data(query_value, search_type):
     cursor = conn.cursor()
 
     try:
-        column = "consumer_number" if search_type == "consumer" else "New Meter QR Code"
+        column = "consumer_number" if search_type == "consumer" else "New_Meter_QR_Code"
 
         cursor.execute("PRAGMA table_info(consumers)")
         columns = [col[1] for col in cursor.fetchall()]
