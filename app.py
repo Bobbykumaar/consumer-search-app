@@ -1,7 +1,10 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_file
 import sqlite3
+import io
+import csv
 
 app = Flask(__name__)
+visit_counter = 0  # simple in-memory visit counter
 
 @app.template_filter('pretty_key')
 def pretty_key(key):
@@ -15,9 +18,6 @@ def get_consumer_data(query_value, search_type):
         column = "consumer_number" if search_type == "consumer" else "New_Meter_QR_Code"
 
         cursor.execute("PRAGMA table_info(consumers)")
-        columns = [col[1] for col in cursor.fetchall()]
-        print("🧾 Columns in table:", columns)
-
         cursor.execute(f"SELECT * FROM consumers WHERE `{column}` = ?", (query_value,))
         row = cursor.fetchone()
 
@@ -37,6 +37,9 @@ def get_consumer_data(query_value, search_type):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    global visit_counter
+    visit_counter += 1
+
     result = None
     message = None
     selected_option = "consumer"
@@ -52,7 +55,27 @@ def index():
         else:
             message = "Please enter a value."
 
-    return render_template("index.html", result=result, message=message, selected=selected_option)
+    return render_template("index.html", result=result, message=message, selected=selected_option, visits=visit_counter)
+
+@app.route("/download", methods=["POST"])
+def download_csv():
+    result = request.form.get("csv_data")
+    if not result:
+        return "No data", 400
+
+    data = eval(result)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(data.keys())
+    writer.writerow(data.values())
+    output.seek(0)
+
+    return send_file(
+        io.BytesIO(output.getvalue().encode()),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name='consumer_data.csv'
+    )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
