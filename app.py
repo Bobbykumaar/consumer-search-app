@@ -5,35 +5,31 @@ app = Flask(__name__)
 
 @app.template_filter('pretty_key')
 def pretty_key(key):
-    """Convert snake_case or underscored column names into a nicer display format."""
     return key.replace('_', ' ').title().replace("Summary", "").replace("Styra", "").strip()
 
-def get_consumer_data(search_type, value):
+def get_consumer_data(query_value, search_type):
     conn = sqlite3.connect("consumers.db")
     cursor = conn.cursor()
 
     try:
-        # Map search type to actual DB column
-        column = "consumer_number" if search_type == "consumer_number" else "New Meter Qr Code"
-        
-        # Debugging info
-        print(f"🔍 Searching by: {column} = {value}")
+        column = "consumer_number" if search_type == "consumer" else "New Meter QR Code"
 
-        cursor.execute(f"SELECT * FROM consumers WHERE {column} = ?", (value,))
+        cursor.execute("PRAGMA table_info(consumers)")
+        columns = [col[1] for col in cursor.fetchall()]
+        print("🧾 Columns in table:", columns)
+
+        cursor.execute(f"SELECT * FROM consumers WHERE `{column}` = ?", (query_value,))
         row = cursor.fetchone()
 
-        # Also try stripped version if consumer_number has leading zeros
-        if not row and search_type == "consumer_number" and value.lstrip("0") != value:
-            cleaned = value.lstrip("0")
-            cursor.execute("SELECT * FROM consumers WHERE consumer_number = ?", (cleaned,))
+        if not row and query_value.lstrip("0") != query_value:
+            cleaned = query_value.lstrip("0")
+            cursor.execute(f"SELECT * FROM consumers WHERE `{column}` = ?", (cleaned,))
             row = cursor.fetchone()
 
         col_names = [desc[0] for desc in cursor.description] if row else []
         conn.close()
 
-        if row:
-            return dict(zip(col_names, row))
-        return None
+        return dict(zip(col_names, row)) if row else None
     except Exception as e:
         print("❌ Query error:", e)
         conn.close()
@@ -43,19 +39,20 @@ def get_consumer_data(search_type, value):
 def index():
     result = None
     message = None
+    selected_option = "consumer"
 
     if request.method == "POST":
-        search_type = request.form.get("search_type", "consumer_number")
-        search_value = request.form.get("search_value", "").strip()
+        selected_option = request.form.get("search_type", "consumer")
+        input_value = request.form.get("input_value", "").strip()
 
-        if search_value:
-            result = get_consumer_data(search_type, search_value)
+        if input_value:
+            result = get_consumer_data(input_value, selected_option)
             if not result:
-                message = f"No data found for {search_type.replace('_', ' ')}: {search_value}"
+                message = f"No data found for {selected_option} number: {input_value}"
         else:
-            message = "Please enter a valid input."
+            message = "Please enter a value."
 
-    return render_template("index.html", result=result, message=message)
+    return render_template("index.html", result=result, message=message, selected=selected_option)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
