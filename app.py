@@ -59,23 +59,29 @@ def index():
 
 @app.route("/download", methods=["POST"])
 def download_csv():
-    result = request.form.get("csv_data")
-    if not result:
-        return "No data", 400
+    try:
+        result_json = request.form.get("csv_data")
+        if not result_json:
+            return "No data", 400
 
-    data = eval(result)
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(data.keys())
-    writer.writerow(data.values())
-    output.seek(0)
+        data = json.loads(result_json)
 
-    return send_file(
-        io.BytesIO(output.getvalue().encode()),
-        mimetype='text/csv',
-        as_attachment=True,
-        download_name='consumer_data.csv'
-    )
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(data.keys())
+        writer.writerow(data.values())
+        output.seek(0)
+
+        return send_file(
+            io.BytesIO(output.getvalue().encode()),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name='consumer_data.csv'
+        )
+    except Exception as e:
+        print("❌ CSV Export Error:", e)
+        return "Internal Server Error", 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
