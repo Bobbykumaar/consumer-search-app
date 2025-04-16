@@ -1,39 +1,39 @@
 import json
 from flask import Flask, render_template, request, send_file
-import sqlite3
+from pymongo import MongoClient
 import io
 import csv
 
 app = Flask(__name__)
-visit_counter = 0  # simple in-memory visit counter
+visit_counter = 0  # Simple in-memory visit counter
+
+# ✅ Connect to MongoDB
+client = MongoClient("mongodb+srv://bobbykumaar:bXXck9xw91fSedzt@consumercluster.nooechs.mongodb.net/?retryWrites=true&w=majority&appName=ConsumerCluster")
+db = client["consumers_db"]
+collection = db["consumers"]
 
 @app.template_filter('pretty_key')
 def pretty_key(key):
     return key.replace('_', ' ').title().replace("Summary", "").replace("Styra", "").strip()
 
 def get_consumer_data(query_value, search_type):
-    conn = sqlite3.connect("consumers.db")
-    cursor = conn.cursor()
-
     try:
-        column = "consumer_number" if search_type == "consumer" else "New_Meter_QR_Code"
+        field = "consumer_number" if search_type == "consumer" else "new_meter_qr_code"
+        query = {field: query_value}
 
-        cursor.execute("PRAGMA table_info(consumers)")
-        cursor.execute(f"SELECT * FROM consumers WHERE `{column}` = ?", (query_value,))
-        row = cursor.fetchone()
+        result = collection.find_one(query)
 
-        if not row and query_value.lstrip("0") != query_value:
-            cleaned = query_value.lstrip("0")
-            cursor.execute(f"SELECT * FROM consumers WHERE `{column}` = ?", (cleaned,))
-            row = cursor.fetchone()
+        # Retry without leading zeros
+        if not result and query_value.lstrip("0") != query_value:
+            query[field] = query_value.lstrip("0")
+            result = collection.find_one(query)
 
-        col_names = [desc[0] for desc in cursor.description] if row else []
-        conn.close()
+        if result and "_id" in result:
+            del result["_id"]  # Remove Mongo's default ID
 
-        return dict(zip(col_names, row)) if row else None
+        return result
     except Exception as e:
-        print("❌ Query error:", e)
-        conn.close()
+        print("❌ MongoDB Query Error:", e)
         return None
 
 @app.route("/", methods=["GET", "POST"])
@@ -82,7 +82,6 @@ def download_csv():
     except Exception as e:
         print("❌ CSV Export Error:", e)
         return "Internal Server Error", 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
