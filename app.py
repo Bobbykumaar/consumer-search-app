@@ -7,9 +7,9 @@ import csv
 app = Flask(__name__)
 visit_counter = 0  # Simple in-memory visit counter
 
-# ✅ Connect to MongoDB
+# ✅ Connect to MongoDB (fixed DB name)
 client = MongoClient("mongodb+srv://bobbykumaar:bXXck9xw91fSedzt@consumercluster.nooechs.mongodb.net/?retryWrites=true&w=majority&appName=ConsumerCluster")
-db = client["consumers_db"]
+db = client["consumer_database"]  # ✅ Fixed here
 collection = db["consumers"]
 
 @app.template_filter('pretty_key')
