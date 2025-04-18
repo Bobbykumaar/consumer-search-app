@@ -12,12 +12,12 @@ client = MongoClient("mongodb+srv://bobbykumaar:bXXck9xw91fSedzt@consumercluster
 db = client["consumer_database"]
 collection = db["consumers"]
 
-# ✅ Clean display filter
+# ✅ Template filter to clean column names
 @app.template_filter('pretty_key')
 def pretty_key(key):
     return key.replace('_', ' ').title().replace("Summary", "").replace("Styra", "").strip()
 
-# ✅ Get all unique columns from sample documents
+# ✅ Get all unique columns from a few sample documents
 def get_all_columns():
     columns = set()
     for doc in collection.find().limit(10):
@@ -26,17 +26,16 @@ def get_all_columns():
     columns.discard("source")
     return sorted(columns)
 
-# ✅ Query by selected field (string match)
+# ✅ Query the database by selected field and string value
 def get_consumer_data(value, field):
     try:
         query = {field: value}
         print(f"🔍 Searching with query: {query}")
         result = collection.find_one(query)
 
-        # Try again without leading zeros if result not found
         if not result and value.lstrip("0") != value:
             query[field] = value.lstrip("0")
-            print(f"🔁 Retrying with query: {query}")
+            print(f"🔁 Retrying with stripped leading zeros: {query}")
             result = collection.find_one(query)
 
         if result:
@@ -79,7 +78,7 @@ def index():
         input_value=search_value
     )
 
-# ✅ CSV download
+# ✅ CSV download endpoint
 @app.route("/download", methods=["POST"])
 def download_csv():
     try:
