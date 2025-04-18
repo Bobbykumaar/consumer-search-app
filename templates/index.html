@@ -35,7 +35,7 @@
         }
         select, input[type="text"] {
             padding: 0.5rem;
-            width: 75%;
+            width: 80%;
             margin: 0.5rem 0;
         }
         button {
@@ -73,12 +73,11 @@
 
     <div class="container">
         <h2>🔍 Search Consumer</h2>
-        <p>Select any column from the database and search by its value.</p>
+        <p>Select any field to search against from the dropdown below:</p>
 
         <form method="post">
-            <label for="search_column">🔽 Choose column to search:</label><br>
             <select name="search_column" required>
-                <option value="">-- Select Column --</option>
+                <option value="">-- Choose a field --</option>
                 {% for col in all_columns %}
                     <option value="{{ col }}" {% if selected_column == col %}selected{% endif %}>
                         {{ col|pretty_key }}
@@ -86,9 +85,9 @@
                 {% endfor %}
             </select>
             <br>
-            <input type="text" name="input_value" value="{{ input_value }}" placeholder="Enter value..." required>
+            <input type="text" name="input_value" placeholder="Enter value..." value="{{ input_value }}" required>
             <br>
-            <button type="submit">🔍 Search</button>
+            <button type="submit">Search</button>
         </form>
 
         {% if message %}
