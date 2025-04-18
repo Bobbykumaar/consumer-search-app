@@ -12,41 +12,41 @@ client = MongoClient("mongodb+srv://bobbykumaar:bXXck9xw91fSedzt@consumercluster
 db = client["consumer_database"]
 collection = db["consumers"]
 
-# ✅ Clean column display filter
+# ✅ Clean display filter
 @app.template_filter('pretty_key')
 def pretty_key(key):
     return key.replace('_', ' ').title().replace("Summary", "").replace("Styra", "").strip()
 
-# ✅ Get all unique columns from both A & B sources
+# ✅ Get all unique columns from sample documents
 def get_all_columns():
     columns = set()
-    for tag in ["A", "B"]:
-        doc = collection.find_one({"source": tag})
-        if doc:
-            columns.update(doc.keys())
+    for doc in collection.find().limit(10):
+        columns.update(doc.keys())
     columns.discard("_id")
     columns.discard("source")
     return sorted(columns)
 
-# ✅ Search by selected column
+# ✅ Query by selected field (string match)
 def get_consumer_data(value, field):
     try:
         query = {field: value}
+        print(f"🔍 Searching with query: {query}")
         result = collection.find_one(query)
 
-        # Try again without leading zeros
+        # Try again without leading zeros if result not found
         if not result and value.lstrip("0") != value:
             query[field] = value.lstrip("0")
+            print(f"🔁 Retrying with query: {query}")
             result = collection.find_one(query)
 
-        if result and "_id" in result:
-            del result["_id"]
+        if result:
+            result.pop("_id", None)
         return result
     except Exception as e:
         print("❌ MongoDB Query Error:", e)
         return None
 
-# ✅ Home route
+# ✅ Main route
 @app.route("/", methods=["GET", "POST"])
 def index():
     global visit_counter
@@ -79,7 +79,7 @@ def index():
         input_value=search_value
     )
 
-# ✅ CSV download endpoint
+# ✅ CSV download
 @app.route("/download", methods=["POST"])
 def download_csv():
     try:
