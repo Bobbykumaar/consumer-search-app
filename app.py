@@ -16,6 +16,7 @@ collection = db["consumers"]
 def get_meter_data_all_sources(meter_number):
     meter_number = meter_number.strip()
     
+    # Fetch all data from Source A
     source_a_doc = collection.find_one({
         "source": "A",
         "$or": [
@@ -24,6 +25,7 @@ def get_meter_data_all_sources(meter_number):
         ]
     })
 
+    # Fetch only the filtered columns for Source B
     source_b_doc = collection.find_one({
         "source": "B",
         "$or": [
@@ -32,14 +34,16 @@ def get_meter_data_all_sources(meter_number):
         ]
     })
 
-    # Filter columns based on prefix: 'me', 'mm', 'ma', or 'c'
+    # Filter columns in Source B to only include those that start with 'me', 'mm', 'ma', or 'c'
     def filter_columns(doc):
         if not doc:
             return {}
         return {key: value for key, value in doc.items() if key.lower().startswith(('me', 'mm', 'ma', 'c'))}
 
-    # Filter the documents for both sources
-    source_a_doc = filter_columns(source_a_doc)
+    # No filtering for Source A, return all data
+    source_a_doc = source_a_doc if source_a_doc else {}
+
+    # Filter the columns for Source B
     source_b_doc = filter_columns(source_b_doc)
 
     return {
