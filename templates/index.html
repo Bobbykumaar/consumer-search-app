@@ -97,11 +97,14 @@
         {% if result %}
             <div class="card">
                 <h3>📋 Consumer Details</h3>
-                <ul>
-                    {% for key, value in result.items() %}
-                        <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
-                    {% endfor %}
-                </ul>
+                {% for record in result %}
+                    <ul>
+                        {% for key, value in record.items() %}
+                            <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
+                        {% endfor %}
+                    </ul>
+                    <hr>
+                {% endfor %}
 
                 <form method="post" action="/download">
                     <input type="hidden" name="csv_data" value='{{ result | tojson | safe }}'>
