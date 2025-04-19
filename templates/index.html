@@ -85,21 +85,25 @@
             <p class="message">❌ {{ message }}</p>
         {% endif %}
 
-        {% if result %}
+        {% if result_a %}
             <div class="card">
-                <h3>📋 Consumer Details</h3>
+                <h3>📋 Source A Consumer Details</h3>
                 <ul>
-                    {% for key, value in result.items() %}
-                        {% if key.lower().startswith(('me', 'mm', 'ma', 'c')) %}
-                            <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
-                        {% endif %}
+                    {% for key, value in result_a.items() %}
+                        <li><strong>{{ key }}:</strong> {{ value }}</li>
                     {% endfor %}
                 </ul>
+            </div>
+        {% endif %}
 
-                <form method="post" action="/download">
-                    <input type="hidden" name="csv_data" value='{{ result | tojson | safe }}'>
-                    <button type="submit">⬇️ Download as CSV</button>
-                </form>
+        {% if result_b %}
+            <div class="card">
+                <h3>📋 Source B Consumer Details</h3>
+                <ul>
+                    {% for key, value in result_b.items() %}
+                        <li><strong>{{ key }}:</strong> {{ value }}</li>
+                    {% endfor %}
+                </ul>
             </div>
         {% endif %}
 
