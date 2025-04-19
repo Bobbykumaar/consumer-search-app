@@ -23,7 +23,7 @@
             transition: background 0.3s, color 0.3s;
         }
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: auto;
         }
         h2 {
@@ -73,7 +73,7 @@
 
     <div class="container">
         <h2>🔍 Search by Meter Number</h2>
-        <p>Enter the meter number. We'll fetch data from both Source A and B automatically.</p>
+        <p>Enter the meter number below. Data will be retrieved from both Source A and Source B.</p>
 
         <form method="post">
             <input type="text" name="input_value" placeholder="Enter Meter Number..." value="{{ input_value }}" required>
@@ -85,18 +85,32 @@
             <p class="message">❌ {{ message }}</p>
         {% endif %}
 
-        {% if result %}
+        {% if result_a %}
             <div class="card">
-                <h3>📋 Consumer Details</h3>
+                <h3>📘 Source A Data</h3>
                 <ul>
-                    {% for key, value in result.items() %}
+                    {% for key, value in result_a.items() %}
                         <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
                     {% endfor %}
                 </ul>
-
                 <form method="post" action="/download">
-                    <input type="hidden" name="csv_data" value='{{ result | tojson | safe }}'>
-                    <button type="submit">⬇️ Download as CSV</button>
+                    <input type="hidden" name="csv_data" value='{{ result_a | tojson | safe }}'>
+                    <button type="submit">⬇️ Download A</button>
+                </form>
+            </div>
+        {% endif %}
+
+        {% if result_b %}
+            <div class="card">
+                <h3>📗 Source B Data</h3>
+                <ul>
+                    {% for key, value in result_b.items() %}
+                        <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
+                    {% endfor %}
+                </ul>
+                <form method="post" action="/download">
+                    <input type="hidden" name="csv_data" value='{{ result_b | tojson | safe }}'>
+                    <button type="submit">⬇️ Download B</button>
                 </form>
             </div>
         {% endif %}
