@@ -12,13 +12,10 @@ client = MongoClient("mongodb+srv://bobbykumaar:bXXck9xw91fSedzt@consumercluster
 db = client["consumer_database"]
 collection = db["consumers"]
 
-@app.template_filter('pretty_key')
-def pretty_key(key):
-    return key.replace('_', ' ').title().strip()
-
 # Search in both sources for a meter number
 def get_meter_data_all_sources(meter_number):
     meter_number = meter_number.strip()
+    
     source_a_doc = collection.find_one({
         "source": "A",
         "$or": [
@@ -35,10 +32,15 @@ def get_meter_data_all_sources(meter_number):
         ]
     })
 
-    if source_a_doc:
-        source_a_doc.pop("_id", None)
-    if source_b_doc:
-        source_b_doc.pop("_id", None)
+    # Filter columns based on prefix: 'me', 'mm', 'ma', or 'c'
+    def filter_columns(doc):
+        if not doc:
+            return {}
+        return {key: value for key, value in doc.items() if key.lower().startswith(('me', 'mm', 'ma', 'c'))}
+
+    # Filter the documents for both sources
+    source_a_doc = filter_columns(source_a_doc)
+    source_b_doc = filter_columns(source_b_doc)
 
     return {
         "source_a": source_a_doc,
