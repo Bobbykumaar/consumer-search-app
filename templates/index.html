@@ -33,7 +33,7 @@
             margin-bottom: 1rem;
             text-align: center;
         }
-        select, input[type="text"] {
+        input[type="text"] {
             padding: 0.5rem;
             width: 80%;
             margin: 0.5rem 0;
@@ -72,20 +72,11 @@
     <button id="mode-toggle" class="toggle-btn">🌓 Toggle Theme</button>
 
     <div class="container">
-        <h2>🔍 Search Consumer</h2>
-        <p>Select any field to search against from the dropdown below:</p>
+        <h2>🔍 Search by Meter Number</h2>
+        <p>Enter the meter number. We'll fetch data from both Source A and B automatically.</p>
 
         <form method="post">
-            <select name="search_column" required>
-                <option value="">-- Choose a field --</option>
-                {% for col in all_columns %}
-                    <option value="{{ col }}" {% if selected_column == col %}selected{% endif %}>
-                        {{ col|pretty_key }}
-                    </option>
-                {% endfor %}
-            </select>
-            <br>
-            <input type="text" name="input_value" placeholder="Enter value..." value="{{ input_value }}" required>
+            <input type="text" name="input_value" placeholder="Enter Meter Number..." value="{{ input_value }}" required>
             <br>
             <button type="submit">Search</button>
         </form>
@@ -97,14 +88,11 @@
         {% if result %}
             <div class="card">
                 <h3>📋 Consumer Details</h3>
-                {% for record in result %}
-                    <ul>
-                        {% for key, value in record.items() %}
-                            <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
-                        {% endfor %}
-                    </ul>
-                    <hr>
-                {% endfor %}
+                <ul>
+                    {% for key, value in result.items() %}
+                        <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
+                    {% endfor %}
+                </ul>
 
                 <form method="post" action="/download">
                     <input type="hidden" name="csv_data" value='{{ result | tojson | safe }}'>
