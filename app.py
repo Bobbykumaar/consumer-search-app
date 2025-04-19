@@ -7,51 +7,65 @@ from pymongo import MongoClient
 app = Flask(__name__)
 visit_counter = 0
 
-# ✅ MongoDB Connection
+# MongoDB Connection
 client = MongoClient("mongodb+srv://bobbykumaar:bXXck9xw91fSedzt@consumercluster.nooechs.mongodb.net/?retryWrites=true&w=majority&appName=ConsumerCluster")
 db = client["consumer_database"]
 collection = db["consumers"]
 
-# ✅ Template filter to clean column names
+# Clean label filter for display
 @app.template_filter('pretty_key')
 def pretty_key(key):
-    return key.replace('_', ' ').title().replace("Summary", "").replace("Styra", "").strip()
+    return {
+        "meter_number": "Meter Number"
+    }.get(key, key.replace('_', ' ').title().replace("Summary", "").replace("Styra", "").strip())
 
-# ✅ Get all unique columns from a few sample documents
+# Get unique columns (with alias normalization)
 def get_all_columns():
     columns = set()
     for doc in collection.find().limit(10):
         columns.update(doc.keys())
     columns.discard("_id")
     columns.discard("source")
+    columns.discard("New Meter Qr Code")
+    columns.discard("MSN")
+    columns.add("meter_number")  # Add unified option
     return sorted(columns)
 
-# ✅ Query the database by selected field and string value
+# Fetch matching data
 def get_consumer_data(value, field):
     try:
-        query = {field: value}
-        print(f"🔍 Searching with query: {query}")
-        result = collection.find_one(query)
+        cross_fields = {
+            "meter_number": ["New Meter Qr Code", "MSN"]
+        }
+        results = []
 
-        if not result and value.lstrip("0") != value:
-            query[field] = value.lstrip("0")
-            print(f"🔁 Retrying with stripped leading zeros: {query}")
-            result = collection.find_one(query)
+        # If cross-source search
+        if field in cross_fields:
+            for f in cross_fields[field]:
+                q = {f: value}
+                result = collection.find_one(q) or collection.find_one({f: value.lstrip("0")})
+                if result:
+                    result.pop("_id", None)
+                    results.append(result)
+        else:
+            q = {field: value}
+            result = collection.find_one(q) or collection.find_one({field: value.lstrip("0")})
+            if result:
+                result.pop("_id", None)
+                results.append(result)
 
-        if result:
-            result.pop("_id", None)
-        return result
+        return results
     except Exception as e:
         print("❌ MongoDB Query Error:", e)
-        return None
+        return []
 
-# ✅ Main route
+# Home page
 @app.route("/", methods=["GET", "POST"])
 def index():
     global visit_counter
     visit_counter += 1
 
-    result = None
+    result = []
     message = None
     selected_column = None
     search_value = ""
@@ -78,7 +92,7 @@ def index():
         input_value=search_value
     )
 
-# ✅ CSV download endpoint
+# CSV export
 @app.route("/download", methods=["POST"])
 def download_csv():
     try:
@@ -89,10 +103,13 @@ def download_csv():
         data = json.loads(result_json)
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(data.keys())
-        writer.writerow(data.values())
-        output.seek(0)
 
+        for record in data:
+            if writer.tell() == 0:
+                writer.writerow(record.keys())  # Write header
+            writer.writerow(record.values())
+
+        output.seek(0)
         return send_file(
             io.BytesIO(output.getvalue().encode()),
             mimetype='text/csv',
