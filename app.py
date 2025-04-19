@@ -7,76 +7,73 @@ from pymongo import MongoClient
 app = Flask(__name__)
 visit_counter = 0
 
-# Connect to MongoDB
+# MongoDB connection
 client = MongoClient("mongodb+srv://bobbykumaar:bXXck9xw91fSedzt@consumercluster.nooechs.mongodb.net/?retryWrites=true&w=majority&appName=ConsumerCluster")
 db = client["consumer_database"]
 collection = db["consumers"]
 
-# Format key names for display
 @app.template_filter('pretty_key')
 def pretty_key(key):
     return key.replace('_', ' ').title().strip()
 
-# Search by meter number in both sources
-def get_meter_data(meter_number):
-    try:
-        meter_number = meter_number.strip()
-        results = []
+# Search in both sources for a meter number
+def get_meter_data_all_sources(meter_number):
+    meter_number = meter_number.strip()
+    source_a_doc = collection.find_one({
+        "source": "A",
+        "$or": [
+            {"New Meter Qr Code": meter_number},
+            {"New Meter Qr Code": meter_number.lstrip("0")}
+        ]
+    })
 
-        # Search in Source A
-        a_doc = collection.find_one({
-            "source": "A",
-            "$or": [
-                {"New Meter Qr Code": meter_number},
-                {"New Meter Qr Code": meter_number.lstrip("0")}
-            ]
-        })
-        if a_doc:
-            a_doc.pop("_id", None)
-            results.append(a_doc)
+    source_b_doc = collection.find_one({
+        "source": "B",
+        "$or": [
+            {"MSN": meter_number},
+            {"MSN": meter_number.lstrip("0")}
+        ]
+    })
 
-        # Search in Source B
-        b_doc = collection.find_one({
-            "source": "B",
-            "$or": [
-                {"MSN": meter_number},
-                {"MSN": meter_number.lstrip("0")}
-            ]
-        })
-        if b_doc:
-            b_doc.pop("_id", None)
-            results.append(b_doc)
+    if source_a_doc:
+        source_a_doc.pop("_id", None)
+    if source_b_doc:
+        source_b_doc.pop("_id", None)
 
-        # Merge all found documents
-        if results:
-            combined = {}
-            for r in results:
-                combined.update(r)
-            return combined
-
-        return None
-    except Exception as e:
-        print("❌ Error fetching meter data:", e)
-        return None
+    return {
+        "source_a": source_a_doc,
+        "source_b": source_b_doc
+    }
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     global visit_counter
     visit_counter += 1
-    result = None
+    meter_number = ""
+    result_a = None
+    result_b = None
     message = None
-    input_value = ""
 
     if request.method == "POST":
-        input_value = request.form.get("input_value", "").strip()
-        if input_value:
-            result = get_meter_data(input_value)
-            if not result:
-                message = f"No data found for meter number: {input_value}"
+        meter_number = request.form.get("input_value", "").strip()
+        if meter_number:
+            data = get_meter_data_all_sources(meter_number)
+            result_a = data["source_a"]
+            result_b = data["source_b"]
+
+            if not result_a and not result_b:
+                message = f"No data found for meter number: {meter_number}"
         else:
             message = "Please enter a meter number."
 
-    return render_template("index.html", result=result, message=message, visits=visit_counter, input_value=input_value)
+    return render_template(
+        "index.html",
+        visits=visit_counter,
+        input_value=meter_number,
+        result_a=result_a,
+        result_b=result_b,
+        message=message
+    )
 
 @app.route("/download", methods=["POST"])
 def download_csv():
