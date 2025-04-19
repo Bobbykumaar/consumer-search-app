@@ -22,8 +22,8 @@ def get_meter_data_all_sources(meter_number):
     source_a_doc = collection.find_one({
         "source": "A",
         "$or": [
-            {"New Meter Qr Code": meter_number},
-            {"New Meter Qr Code": meter_number.lstrip("0")}
+            {"New Meter QR Code": meter_number},
+            {"New Meter QR Code": meter_number.lstrip("0")}
         ]
     })
 
