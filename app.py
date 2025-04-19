@@ -7,92 +7,77 @@ from pymongo import MongoClient
 app = Flask(__name__)
 visit_counter = 0
 
-# MongoDB Connection
+# Connect to MongoDB
 client = MongoClient("mongodb+srv://bobbykumaar:bXXck9xw91fSedzt@consumercluster.nooechs.mongodb.net/?retryWrites=true&w=majority&appName=ConsumerCluster")
 db = client["consumer_database"]
 collection = db["consumers"]
 
-# Clean label filter for display
+# Format key names for display
 @app.template_filter('pretty_key')
 def pretty_key(key):
-    return {
-        "meter_number": "Meter Number"
-    }.get(key, key.replace('_', ' ').title().replace("Summary", "").replace("Styra", "").strip())
+    return key.replace('_', ' ').title().strip()
 
-# Get unique columns (with alias normalization)
-def get_all_columns():
-    columns = set()
-    for doc in collection.find().limit(10):
-        columns.update(doc.keys())
-    columns.discard("_id")
-    columns.discard("source")
-    columns.discard("New Meter Qr Code")
-    columns.discard("MSN")
-    columns.add("meter_number")  # Add unified option
-    return sorted(columns)
-
-# Fetch matching data
-def get_consumer_data(value, field):
+# Search by meter number in both sources
+def get_meter_data(meter_number):
     try:
-        cross_fields = {
-            "meter_number": ["New Meter Qr Code", "MSN"]
-        }
+        meter_number = meter_number.strip()
         results = []
 
-        # If cross-source search
-        if field in cross_fields:
-            for f in cross_fields[field]:
-                q = {f: value}
-                result = collection.find_one(q) or collection.find_one({f: value.lstrip("0")})
-                if result:
-                    result.pop("_id", None)
-                    results.append(result)
-        else:
-            q = {field: value}
-            result = collection.find_one(q) or collection.find_one({field: value.lstrip("0")})
-            if result:
-                result.pop("_id", None)
-                results.append(result)
+        # Search in Source A
+        a_doc = collection.find_one({
+            "source": "A",
+            "$or": [
+                {"New Meter Qr Code": meter_number},
+                {"New Meter Qr Code": meter_number.lstrip("0")}
+            ]
+        })
+        if a_doc:
+            a_doc.pop("_id", None)
+            results.append(a_doc)
 
-        return results
+        # Search in Source B
+        b_doc = collection.find_one({
+            "source": "B",
+            "$or": [
+                {"MSN": meter_number},
+                {"MSN": meter_number.lstrip("0")}
+            ]
+        })
+        if b_doc:
+            b_doc.pop("_id", None)
+            results.append(b_doc)
+
+        # Merge all found documents
+        if results:
+            combined = {}
+            for r in results:
+                combined.update(r)
+            return combined
+
+        return None
     except Exception as e:
-        print("❌ MongoDB Query Error:", e)
-        return []
+        print("❌ Error fetching meter data:", e)
+        return None
 
-# Home page
 @app.route("/", methods=["GET", "POST"])
 def index():
     global visit_counter
     visit_counter += 1
-
-    result = []
+    result = None
     message = None
-    selected_column = None
-    search_value = ""
-    all_columns = get_all_columns()
+    input_value = ""
 
     if request.method == "POST":
-        selected_column = request.form.get("search_column")
-        search_value = request.form.get("input_value", "").strip()
-
-        if selected_column and search_value:
-            result = get_consumer_data(search_value, selected_column)
+        input_value = request.form.get("input_value", "").strip()
+        if input_value:
+            result = get_meter_data(input_value)
             if not result:
-                message = f"No data found for {selected_column}: {search_value}"
+                message = f"No data found for meter number: {input_value}"
         else:
-            message = "Please select a column and enter a value."
+            message = "Please enter a meter number."
 
-    return render_template(
-        "index.html",
-        result=result,
-        message=message,
-        visits=visit_counter,
-        all_columns=all_columns,
-        selected_column=selected_column,
-        input_value=search_value
-    )
+    return render_template("index.html", result=result, message=message, visits=visit_counter, input_value=input_value)
 
-# CSV export
 @app.route("/download", methods=["POST"])
 def download_csv():
     try:
@@ -103,13 +88,10 @@ def download_csv():
         data = json.loads(result_json)
         output = io.StringIO()
         writer = csv.writer(output)
-
-        for record in data:
-            if writer.tell() == 0:
-                writer.writerow(record.keys())  # Write header
-            writer.writerow(record.values())
-
+        writer.writerow(data.keys())
+        writer.writerow(data.values())
         output.seek(0)
+
         return send_file(
             io.BytesIO(output.getvalue().encode()),
             mimetype='text/csv',
