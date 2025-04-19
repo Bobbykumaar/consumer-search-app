@@ -23,7 +23,7 @@
             transition: background 0.3s, color 0.3s;
         }
         .container {
-            max-width: 700px;
+            max-width: 600px;
             margin: auto;
         }
         h2 {
@@ -33,7 +33,7 @@
             margin-bottom: 1rem;
             text-align: center;
         }
-        input[type="text"] {
+        select, input[type="text"] {
             padding: 0.5rem;
             width: 80%;
             margin: 0.5rem 0;
@@ -72,8 +72,8 @@
     <button id="mode-toggle" class="toggle-btn">🌓 Toggle Theme</button>
 
     <div class="container">
-        <h2>🔍 Search by Meter Number</h2>
-        <p>Enter the meter number below. Data will be retrieved from both Source A and Source B.</p>
+        <h2>🔍 Search Consumer</h2>
+        <p>Search by meter number (New Meter QR Code or MSN).</p>
 
         <form method="post">
             <input type="text" name="input_value" placeholder="Enter Meter Number..." value="{{ input_value }}" required>
@@ -85,32 +85,20 @@
             <p class="message">❌ {{ message }}</p>
         {% endif %}
 
-        {% if result_a %}
+        {% if result %}
             <div class="card">
-                <h3>📘 Source A Data</h3>
+                <h3>📋 Consumer Details</h3>
                 <ul>
-                    {% for key, value in result_a.items() %}
-                        <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
+                    {% for key, value in result.items() %}
+                        {% if key.lower().startswith(('me', 'mm', 'ma', 'c')) %}
+                            <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
+                        {% endif %}
                     {% endfor %}
                 </ul>
-                <form method="post" action="/download">
-                    <input type="hidden" name="csv_data" value='{{ result_a | tojson | safe }}'>
-                    <button type="submit">⬇️ Download A</button>
-                </form>
-            </div>
-        {% endif %}
 
-        {% if result_b %}
-            <div class="card">
-                <h3>📗 Source B Data</h3>
-                <ul>
-                    {% for key, value in result_b.items() %}
-                        <li><strong>{{ key|pretty_key }}:</strong> {{ value }}</li>
-                    {% endfor %}
-                </ul>
                 <form method="post" action="/download">
-                    <input type="hidden" name="csv_data" value='{{ result_b | tojson | safe }}'>
-                    <button type="submit">⬇️ Download B</button>
+                    <input type="hidden" name="csv_data" value='{{ result | tojson | safe }}'>
+                    <button type="submit">⬇️ Download as CSV</button>
                 </form>
             </div>
         {% endif %}
