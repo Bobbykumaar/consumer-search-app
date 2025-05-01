@@ -99,11 +99,12 @@
         {% endif %}
 
         {% if mdm_summary %}
-            <div class="card">
-                <h3>📋 Details Related to MDM</h3>
-                <p>{{ mdm_summary }}</p>
-            </div>
-        {% endif %}
+        <div class="card">
+        <h3>📋 Details Related to MDM</h3>
+        <p>{{ mdm_summary | safe }}</p>
+        </div>
+      {% endif %}
+
 
         <p>👁️ Total visits during this run: <strong>{{ visits }}</strong></p>
     </div>
