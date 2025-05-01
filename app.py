@@ -44,6 +44,7 @@ def get_meter_data_all_sources(meter_number):
                 f"✅ <strong>Master Data Sync</strong> for this consumer is <strong>completed</strong> on "
                 f"<strong>{source_b_raw.get('MASTERDATASYNC_DTTM', 'N/A')}</strong>. "
                 f"This consumer belongs to <strong>Cycle Code {source_b_raw.get('CYCLECODE', 'N/A')}</strong>."
+                 f"with permanent <strong>Consumer Number {source_b_raw.get('CONSUMER_ID', 'N/A')}</strong>."
             )
         elif mmr_status == "success":
             mdm_summary = (
