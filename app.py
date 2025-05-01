@@ -40,13 +40,13 @@ def get_meter_data_all_sources(meter_number):
         status = source_b_raw.get("MASTERDATASYNC_STATUS", "").upper()
         if status == "COMPLETED":
             mdm_summary = (
-                f"Master data sync for this consumer is completed on "
+                f"Master Data Sync for this consumer is completed on "
                 f"{source_b_raw.get('MASTERDATASYNC_DTTM')}. "
                 f"This consumer belongs to cycle code {source_b_raw.get('CYCLECODE')}."
             )
         elif source_b_raw.get("MMR_STATUS", "").upper() == "SUCCESS":
             mdm_summary = (
-                f"Mass meter replacement is complete on {source_b_raw.get('MMR_DTTM')}. "
+                f"Mass meter replacement is complete on {source_b_raw.get('MMR_DTTM')}, MDS still pending. "
                 f"This consumer belongs to cycle code {source_b_raw.get('CYCLECODE')} "
                 f"having permanent consumer number {source_b_raw.get('CONSUMER_ID')}."
             )
