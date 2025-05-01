@@ -90,20 +90,18 @@
                 <h3>📋 Details related to HES and MI</h3>
                 <ul>
                     {% for key, value in result_a.items() %}
-                        <li><strong>{{ key }}:</strong> {{ value }}</li>
+                        {% if key.lower() not in ['_id', 'source'] %}
+                            <li><strong>{{ key }}:</strong> {{ value }}</li>
+                        {% endif %}
                     {% endfor %}
                 </ul>
             </div>
         {% endif %}
 
-        {% if result_b %}
+        {% if mdm_summary %}
             <div class="card">
                 <h3>📋 Details Related to MDM</h3>
-                <ul>
-                    {% for key, value in result_b.items() %}
-                        <li><strong>{{ key }}:</strong> {{ value }}</li>
-                    {% endfor %}
-                </ul>
+                <p>{{ mdm_summary }}</p>
             </div>
         {% endif %}
 
