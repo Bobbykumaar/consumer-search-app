@@ -37,23 +37,25 @@ def get_meter_data_all_sources(meter_number):
 
     # Format result_b into a message
     if source_b_raw:
-        status = source_b_raw.get("MASTERDATASYNC_STATUS", "").upper()
-        if status == "COMPLETED":
+        master_status = str(source_b_raw.get("MASTERDATASYNC_STATUS", "")).strip().lower()
+        mmr_status = str(source_b_raw.get("MMR_STATUS", "")).strip().lower()
+        if master_status == "completed":
             mdm_summary = (
-                f"Master Data Sync for this consumer is completed on "
-                f"{source_b_raw.get('MASTERDATASYNC_DTTM')}. "
-                f"This consumer belongs to cycle code {source_b_raw.get('CYCLECODE')}."
+                f"✅ <strong>Master Data Sync</strong> for this consumer is <strong>completed</strong> on "
+                f"<strong>{source_b_raw.get('MASTERDATASYNC_DTTM', 'N/A')}</strong>. "
+                f"This consumer belongs to <strong>Cycle Code {source_b_raw.get('CYCLECODE', 'N/A')}</strong>."
             )
-        elif source_b_raw.get("MMR_STATUS", "").upper() == "SUCCESS":
+        elif mmr_status == "success":
             mdm_summary = (
-                f"Mass meter replacement is complete on {source_b_raw.get('MMR_DTTM')}, MDS still pending. "
-                f"This consumer belongs to cycle code {source_b_raw.get('CYCLECODE')} "
-                f"having permanent consumer number {source_b_raw.get('CONSUMER_ID')}."
+                f"✅ <strong>Mass Meter Replacement</strong> was <strong>completed</strong> on "
+                f"<strong>{source_b_raw.get('MMR_DTTM', 'N/A')}</strong>, but MDS is still pending. "
+                f"This consumer belongs to <strong>Cycle Code {source_b_raw.get('CYCLECODE', 'N/A')}</strong> "
+                f"with permanent <strong>Consumer Number {source_b_raw.get('CONSUMER_ID', 'N/A')}</strong>."
             )
         else:
-            mdm_summary = "MCO completed."
+            mdm_summary = "⚠️ <strong>MCO completed</strong>."
     else:
-        mdm_summary = "MCO completed."
+        mdm_summary = "⚠️ <strong>MCO not pushed</strong>."
 
     return {
         "source_a": source_a_doc,
