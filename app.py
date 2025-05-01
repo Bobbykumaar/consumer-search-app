@@ -12,11 +12,10 @@ client = MongoClient("mongodb+srv://bobbykumaar:bXXck9xw91fSedzt@consumercluster
 db = client["consumer_database"]
 collection = db["consumers"]
 
-# Search in both sources for a meter number
 def get_meter_data_all_sources(meter_number):
     meter_number = meter_number.strip()
-    
-    # Fetch all data from Source A
+
+    # Source A (HES/MI)
     source_a_doc = collection.find_one({
         "source": "A",
         "$or": [
@@ -25,8 +24,8 @@ def get_meter_data_all_sources(meter_number):
         ]
     })
 
-    # Fetch only the filtered columns for Source B
-    source_b_doc = collection.find_one({
+    # Source B (MDM)
+    source_b_raw = collection.find_one({
         "source": "B",
         "$or": [
             {"MSN": meter_number},
@@ -34,21 +33,31 @@ def get_meter_data_all_sources(meter_number):
         ]
     })
 
-    # Filter columns in Source B to only include those that start with 'me', 'mm', 'ma', or 'c'
-    def filter_columns(doc):
-        if not doc:
-            return {}
-        return {key: value for key, value in doc.items() if key.lower().startswith(('me', 'mm', 'ma', 'c'))}
-
-    # No filtering for Source A, return all data
     source_a_doc = source_a_doc if source_a_doc else {}
 
-    # Filter the columns for Source B
-    source_b_doc = filter_columns(source_b_doc)
+    # Format result_b into a message
+    if source_b_raw:
+        status = source_b_raw.get("MASTERDATASYNC_STATUS", "").upper()
+        if status == "COMPLETED":
+            mdm_summary = (
+                f"Master data sync for this consumer is completed on "
+                f"{source_b_raw.get('MASTERDATASYNC_DTTM')}. "
+                f"This consumer belongs to cycle code {source_b_raw.get('CYCLECODE')}."
+            )
+        elif source_b_raw.get("MMR_STATUS", "").upper() == "SUCCESS":
+            mdm_summary = (
+                f"Mass meter replacement is complete on {source_b_raw.get('MMR_DTTM')}. "
+                f"This consumer belongs to cycle code {source_b_raw.get('CYCLECODE')} "
+                f"having permanent consumer number {source_b_raw.get('CONSUMER_ID')}."
+            )
+        else:
+            mdm_summary = "MCO completed."
+    else:
+        mdm_summary = "MCO completed."
 
     return {
         "source_a": source_a_doc,
-        "source_b": source_b_doc
+        "mdm_summary": mdm_summary
     }
 
 @app.route("/", methods=["GET", "POST"])
@@ -57,7 +66,7 @@ def index():
     visit_counter += 1
     meter_number = ""
     result_a = None
-    result_b = None
+    mdm_summary = None
     message = None
 
     if request.method == "POST":
@@ -65,9 +74,8 @@ def index():
         if meter_number:
             data = get_meter_data_all_sources(meter_number)
             result_a = data["source_a"]
-            result_b = data["source_b"]
-
-            if not result_a and not result_b:
+            mdm_summary = data["mdm_summary"]
+            if not result_a:
                 message = f"No data found for meter number: {meter_number}"
         else:
             message = "Please enter a meter number."
@@ -77,7 +85,7 @@ def index():
         visits=visit_counter,
         input_value=meter_number,
         result_a=result_a,
-        result_b=result_b,
+        mdm_summary=mdm_summary,
         message=message
     )
 
