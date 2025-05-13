@@ -37,28 +37,34 @@ def get_meter_data_all_sources(meter_number):
 
     # Format result_b into a message
     if source_b_raw:
-        master_status = str(source_b_raw.get("MASTERDATASYNC_STATUS", "")).strip().lower()
-        mmr_status = str(source_b_raw.get("MMR_STATUS", "")).strip().lower()
-        if master_status == "completed":
-            mdm_summary = (
-                f"✅ <strong>Master Data Sync</strong> for this consumer is <strong>completed</strong> on "
-                f"<strong>{source_b_raw.get('MASTERDATASYNC_DTTM', 'N/A')}</strong>. "
-                f"This consumer belongs to <strong>Cycle Code {source_b_raw.get('CYCLECODE', 'N/A')}</strong>."
-                 f"with permanent <strong>Consumer Number {source_b_raw.get('CONSUMER_ID', 'N/A')}</strong>."
-                  f" <strong>Note:</strong> If cycle code is not 8, DISCOM are request to change the cycle code to 8 for billing."
-            )
-        elif mmr_status == "success":
-            mdm_summary = (
-                f"✅ <strong>Mass Meter Replacement</strong> was <strong>completed</strong> on "
-                f"<strong>{source_b_raw.get('MMR_DTTM', 'N/A')}</strong>, but MDS is still pending. "
-                f"This consumer belongs to <strong>Cycle Code {source_b_raw.get('CYCLECODE', 'N/A')}</strong> "
-                f"with permanent <strong>Consumer Number {source_b_raw.get('CONSUMER_ID', 'N/A')}</strong>."
-                 f" <strong>Note:</strong> If cycle code is not 8, DISCOM are request to change the cycle code to 8 for billing."
-            )
-        else:
-            mdm_summary = "⚠️ <strong>MCO completed</strong>."
+    master_status = str(source_b_raw.get("MASTERDATASYNC_STATUS", "")).strip().lower()
+    mmr_status = str(source_b_raw.get("MMR_STATUS", "")).strip().lower()
+    cycle_code = str(source_b_raw.get("CYCLECODE", "")).strip()
+    note = ""
+    if cycle_code != "8":
+        note = " <strong>Note:</strong> If cycle code is not 8, DISCOM are requested to process the cycle code to 8 for billing."
+
+    if master_status == "completed":
+        mdm_summary = (
+            f"✅ <strong>Master Data Sync</strong> for this consumer is <strong>completed</strong> on "
+            f"<strong>{source_b_raw.get('MASTERDATASYNC_DTTM', 'N/A')}</strong>. "
+            f"This consumer belongs to <strong>Cycle Code {cycle_code or 'N/A'}</strong> "
+            f"with permanent <strong>Consumer Number {source_b_raw.get('CONSUMER_ID', 'N/A')}</strong>."
+            f"{note}"
+        )
+    elif mmr_status == "success":
+        mdm_summary = (
+            f"✅ <strong>Mass Meter Replacement</strong> was <strong>completed</strong> on "
+            f"<strong>{source_b_raw.get('MMR_DTTM', 'N/A')}</strong>, but MDS is still pending. "
+            f"This consumer belongs to <strong>Cycle Code {cycle_code or 'N/A'}</strong> "
+            f"with permanent <strong>Consumer Number {source_b_raw.get('CONSUMER_ID', 'N/A')}</strong>."
+            f"{note}"
+        )
     else:
-        mdm_summary = "⚠️ <strong>MCO not pushed</strong>."
+        mdm_summary = "⚠️ <strong>MCO completed, but MMR and MDS are yet to be confirmed</strong>."
+else:
+    mdm_summary = "⚠️ <strong>MCO not pushed</strong>."
+
 
     return {
         "source_a": source_a_doc,
