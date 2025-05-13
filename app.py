@@ -41,8 +41,8 @@ def get_meter_data_all_sources(meter_number):
         mmr_status = str(source_b_raw.get("MMR_STATUS", "")).strip().lower()
         cycle_code = str(source_b_raw.get("CYCLECODE", "")).strip()
         note = ""
-        if cycle_code != "8":
-            note = " <strong>Note:</strong> If cycle code is not 8, DISCOM are requested to process the cycle code to 8 for billing."
+        if cycle_code != 8:
+            note = "<br><strong>Note:</strong> If cycle code is not 8, DISCOM are requested to process the cycle code to 8 for billing."
 
         if master_status == "completed":
             mdm_summary = (
